@@ -16,11 +16,13 @@
 
 ## セットアップ手順
 
-```powershell
-# 1. FaceFusion をクローン（このディレクトリ自体が facefusion のクローン先）
-git clone --depth 1 https://github.com/facefusion/facefusion.git .
+> FaceFusion本体のソース（`facefusion/`配下など）はこのリポジトリに取り込み済みでgit管理下にあるため、**別環境でセットアップする場合は本リポジトリを`git clone`するだけでよく、FaceFusion本体を別途cloneする必要はない**。以下の「1」は初回構築時にこのリポジトリを作った際の手順の記録。
 
-# 2. venv 作成
+```powershell
+# 1. (初回構築時のみ実施済み) FaceFusion をクローン（このディレクトリ自体が facefusion のクローン先）
+# git clone --depth 1 https://github.com/facefusion/facefusion.git .
+
+# 2. venv 作成（.gitignoreで除外されているため、別環境では毎回作り直しが必要）
 python -m venv .venv
 
 # 3. venv を「有効化した状態」でインストーラーを実行する（重要、下記の既知の問題1参照）
