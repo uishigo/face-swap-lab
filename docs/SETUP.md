@@ -26,7 +26,7 @@
 python -m venv .venv
 
 # 3. venv を「有効化した状態」でインストーラーを実行する（重要、下記の既知の問題1参照）
-& .\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 python install.py directml --skip-conda
 # NVIDIA GPUがある場合は `cuda`、CPUのみなら `default` を指定する
 
@@ -70,7 +70,7 @@ Invoke-WebRequest -Uri "https://github.com/facefusion/facefusion-assets/releases
 
 `install.py` は内部で `shutil.which('pip')` を使ってパッケージをインストールする。これは **PATH上のpip** を解決するため、venvを「有効化」していない状態（`.\.venv\Scripts\python.exe install.py ...` のように直接実行するだけ）だと、システム側のグローバルpipが使われてしまい、venv内には何もインストールされない。
 
-**対処**: 必ず `& .\.venv\Scripts\Activate.ps1` で venv を有効化してから `python install.py ...` を実行する。
+**対処**: 必ず `.\.venv\Scripts\Activate.ps1` で venv を有効化してから `python install.py ...` を実行する。
 
 ### 2. curl.exe がこの環境で外部HTTPS通信に対して完全にハングする
 
@@ -100,6 +100,37 @@ Intel Arc GPU向けに `onnxruntime-directml` をインストールし `--execut
 - GPUドライバの更新
 - `onnxruntime-directml` のバージョン変更
 - 単一フレーム・小さいモデルだけで最小再現を試す
+
+### 4. 別のWindows環境で `Activate.ps1` が実行ポリシーによりブロックされる
+
+別のWindows環境でセットアップ手順3（`.\.venv\Scripts\Activate.ps1`）を実行すると、以下のようなエラーになることがある。
+
+```
+このシステムではスクリプトの実行が無効になっているため、ファイル ...\Activate.ps1 を読み込むことができません。
+```
+
+PowerShellの実行ポリシー（Execution Policy）が既定で`Restricted`（スクリプト実行禁止）になっているのが原因。`.ps1`はスクリプトのため対象になるが、`.exe`や`.cmd`は影響を受けない。
+
+**対処**: 現在のユーザーに対して実行ポリシーを緩める（管理者権限不要）。
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+確認プロンプトが出たら`Y`で許可。これでローカルスクリプト（`Activate.ps1`など）が実行可能になる（ネットワーク経由でダウンロードした未署名スクリプトには引き続き警告が出る）。そのシェルセッション限定で一時的に許可したいだけであれば、`Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`でも代用可能（ウィンドウを閉じると設定は戻る）。
+
+### 5. Macで `opencv-python==4.13.0.92` が見つからずインストールに失敗する（macOSバージョンが古い場合）
+
+`pip install -r requirements.txt`（`install.py`経由）実行時に以下のようなエラーになることがある。
+
+```
+ERROR: Could not find a version that satisfies the requirement opencv-python==4.13.0.92 (from versions: ...)
+ERROR: No matching distribution found for opencv-python==4.13.0.92
+```
+
+[requirements.txt](../requirements.txt)にピン留めされている`opencv-python==4.13.0.92`は、macOS向けwheelにOSの最小バージョン要件があり（Apple Silicon: macOS 13.0以上、Intel: macOS 14.0以上）、ソース配布（sdist）が無いため、これを下回るmacOSでは「一致するバージョンが無い」というエラーになる。[install.py](../install.py)で`SYSTEM_VERSION_COMPAT=0`を設定済みなので、古いPythonがOSバージョンを偽装して報告する類の問題ではなく、実際のmacOSバージョンがこのwheelの要求を満たしていないことが原因。
+
+**対処**: `sw_vers -productVersion` で実際のmacOSバージョンを確認した上で、[requirements.txt](../requirements.txt)の`opencv-python`のバージョン指定を、そのmacOSバージョンでもwheelが提供されているバージョンまで下げる（例: `4.9.0.80`はarm64がmacOS 11.0以上、x86_64がmacOS 10.16以上まで対応）。facefusionが使うのは基本的な画像処理APIのみのため、4.x系内でのバージョン差による支障は基本的に無い。書き換え後に`python install.py default --skip-conda`を再実行すればセットアップが完了する。
 
 ## 使い方
 
