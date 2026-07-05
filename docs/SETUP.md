@@ -35,6 +35,26 @@ winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-a
 # インストール後、新しいシェルでPATHが反映される
 ```
 
+### Macでの手順（参考、未検証）
+
+このリポジトリはWindows環境で構築したが、macOSで動かす場合は主に以下3点が異なる。
+
+```bash
+# 2. venv作成
+python3 -m venv .venv
+
+# 3. venvを有効化してインストーラーを実行
+source .venv/bin/activate
+python install.py default --skip-conda
+
+# 4. ffmpeg
+brew install ffmpeg
+```
+
+- **`.venv\Scripts\Activate.ps1` ではなく `.venv/bin/activate` を使う**（拡張子なしのシェルスクリプト）。
+- **`install.py` に指定できるのは `default` のみ**: [facefusion/installer.py](../facefusion/installer.py)の`ONNXRUNTIME_SET`は`is_windows()`/`is_linux()`で分岐しており、macOS（Darwin）向けの分岐が存在しない。そのため`directml`は選べず（Windows専用）、`coreml`もこのバージョンのfacefusionには未実装で選択肢に無い。結果としてCPU版onnxruntime（`default`）一択になり、Apple SiliconのGPU/Neural Engineは利用できない。
+- 既知の問題2（`curl.exe`が社内ネットワークでハングする件）はWindows環境固有の事象のため、Macでは発生しない可能性が高い（未検証。もし発生する場合は同様に[curl_shim.py](../curl_shim.py)を流用できる）。
+
 ### テスト素材
 
 FaceFusion公式リポジトリのexampleアセット（source.jpg / target-240p.mp4）を `.assets/` に配置して動作確認に使用。
