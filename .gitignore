@@ -1,0 +1,38 @@
+# Project-specific
+.assets
+.claude
+.caches
+.jobs
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv
+venv/
+env/
+
+# Testing / coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.tox/
+
+# Editors / IDE
+.idea
+.vscode
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
